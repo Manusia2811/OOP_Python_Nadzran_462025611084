@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAPURSYS — Sistem Administrasi Dapur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#181a17;
+    --panel:#232620;
+    --panel-2:#2b2e27;
+    --line:#3c4038;
+    --plate:#f1ecdf;
+    --plate-dim:#c9c3b2;
+    --copper:#c7803f;
+    --copper-bright:#e0954d;
+    --ember:#c4453b;
+    --sage:#8aa079;
+    --sage-dim:#5e7053;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 20% 0%, #23261f 0%, var(--ink) 45%);
+    color:var(--plate);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--copper); color:var(--ink); }
+
+  /* ---------- utility ---------- */
+  .mono{ font-family:'JetBrains Mono', monospace; }
+  .display{ font-family:'Oswald', sans-serif; text-transform:uppercase; letter-spacing:0.04em; }
+  .hidden{ display:none !important; }
+
+  button{
+    font-family:inherit; cursor:pointer; border:none; border-radius:3px;
+  }
+  input, select, textarea{
+    font-family:'JetBrains Mono', monospace;
+    background:var(--ink);
+    border:1px solid var(--line);
+    color:var(--plate);
+    padding:9px 10px;
+    border-radius:3px;
+    font-size:13.5px;
+    width:100%;
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:none; border-color:var(--copper);
+  }
+  label{ font-size:11px; color:var(--plate-dim); text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:5px; font-family:'JetBrains Mono',monospace;}
+
+  /* ================= LOGIN SCREEN ================= */
+  #login-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .login-card{
+    width:100%; max-width:460px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:36px 34px 30px;
+    position:relative;
+    overflow:hidden;
+  }
+  .login-card::before{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:5px;
+    background:repeating-linear-gradient(90deg, var(--copper) 0 18px, transparent 18px 26px);
+  }
+  .brand-eyebrow{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--copper-bright);
+    letter-spacing:0.18em; text-transform:uppercase; margin-bottom:6px;
+  }
+  .brand-title{
+    font-family:'Oswald', sans-serif; font-weight:700; font-size:32px;
+    text-transform:uppercase; letter-spacing:0.02em; color:var(--plate); margin-bottom:4px;
+  }
+  .brand-sub{ color:var(--plate-dim); font-size:13.5px; margin-bottom:26px; line-height:1.5;}
+
+  .role-toggle{ display:flex; gap:8px; margin-bottom:20px; }
+  .role-btn{
+    flex:1; background:var(--ink); border:1px solid var(--line); color:var(--plate-dim);
+    padding:14px 10px; border-radius:5px; text-align:left; transition:.15s;
+  }
+  .role-btn .rt-name{ font-family:'Oswald',sans-serif; font-size:15px; text-transform:uppercase; letter-spacing:0.03em; display:block; color:var(--plate); }
+  .role-btn .rt-desc{ font-size:11px; margin-top:3px; display:block; }
+  .role-btn.active{ border-color:var(--copper); background:#2c2418; }
+  .role-btn.active .rt-name{ color:var(--copper-bright); }
+
+  .field{ margin-bottom:16px; }
+  .login-submit{
+    width:100%; background:var(--copper); color:#1a1408; font-weight:600;
+    padding:13px; font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:0.05em;
+    font-size:14px; border-radius:5px; margin-top:6px;
+  }
+  .login-submit:hover{ background:var(--copper-bright); }
+  .login-error{
+    color:var(--ember); font-size:12px; margin-top:10px; font-family:'JetBrains Mono',monospace; display:none;
+  }
+
+  /* ================= APP SHELL ================= */
+  #app-screen{ display:none; min-height:100vh; flex-direction:column; }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 28px; border-bottom:1px solid var(--line); background:var(--panel);
+    flex-wrap:wrap; gap:12px;
+  }
+  .app-logo{ display:flex; align-items:center; gap:10px; }
+  .app-logo .mark{
+    width:34px; height:34px; border-radius:6px; background:var(--copper);
+    display:flex; align-items:center; justify-content:center; font-family:'Oswald',sans-serif;
+    font-weight:700; color:#1a1408; font-size:16px;
+  }
+  .app-logo .name{ font-family:'Oswald', sans-serif; font-size:18px; letter-spacing:0.03em; }
+  .user-chip{ display:flex; align-items:center; gap:12px; }
+  .user-info{ text-align:right; }
+  .user-info .u-name{ font-size:13.5px; font-weight:600; }
+  .user-info .u-role{ font-size:11px; color:var(--plate-dim); font-family:'JetBrains Mono',monospace; text-transform:uppercase; }
+  .badge{
+    display:inline-block; padding:2px 8px; border-radius:20px; font-size:10px;
+    font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .badge-admin{ background:#3a2c1a; color:var(--copper-bright); border:1px solid #5c4322; }
+  .badge-koki{ background:#1f2c1c; color:var(--sage); border:1px solid #3a4a33; }
+  .logout-btn{
+    background:transparent; border:1px solid var(--line); color:var(--plate-dim); padding:8px 12px;
+    font-size:11px; font-family:'JetBrains Mono',monospace; text-transform:uppercase; border-radius:4px;
+  }
+  .logout-btn:hover{ border-color:var(--ember); color:var(--ember); }
+
+  nav.tabs{
+    display:flex; gap:2px; padding:0 24px; background:var(--ink);
+    border-bottom:1px solid var(--line); overflow-x:auto;
+  }
+  .tab-btn{
+    background:transparent; color:var(--plate-dim); padding:13px 18px;
+    font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.03em; text-transform:uppercase;
+    border-bottom:2px solid transparent; white-space:nowrap;
+    clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px);
+  }
+  .tab-btn:hover{ color:var(--plate); }
+  .tab-btn.active{ color:var(--copper-bright); border-bottom-color:var(--copper); background:var(--panel); }
+
+  main{ flex:1; padding:26px 28px 60px; max-width:1180px; width:100%; margin:0 auto; }
+  .panel-view{ display:none; animation:fadeIn .25s ease; }
+  .panel-view.active{ display:block; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  .view-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px;}
+  .view-title{ font-family:'Oswald',sans-serif; font-size:22px; text-transform:uppercase; letter-spacing:0.02em; }
+  .view-desc{ font-size:12.5px; color:var(--plate-dim); margin-top:3px; }
+
+  .grid-2{ display:grid; grid-template-columns:1.15fr 0.85fr; gap:20px; }
+  @media (max-width:820px){ .grid-2{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:20px 22px;
+  }
+  .card-title{
+    font-family:'Oswald',sans-serif; font-size:14px; text-transform:uppercase; letter-spacing:0.04em;
+    color:var(--copper-bright); margin-bottom:14px; display:flex; align-items:center; gap:8px;
+  }
+  .card + .card{ margin-top:16px; }
+
+  /* item list */
+  .item-row{
+    display:flex; justify-content:space-between; align-items:center; gap:14px;
+    padding:12px 0; border-bottom:1px solid var(--line);
+  }
+  .item-row:last-child{ border-bottom:none; }
+  .item-main .i-name{ font-weight:600; font-size:14px; }
+  .item-main .i-meta{ font-size:11.5px; color:var(--plate-dim); font-family:'JetBrains Mono',monospace; margin-top:2px; }
+  .item-actions{ display:flex; gap:6px; align-items:center; }
+  .qty-btn{
+    background:var(--ink); border:1px solid var(--line); color:var(--plate); width:28px; height:28px;
+    border-radius:4px; font-size:14px;
+  }
+  .qty-btn:hover{ border-color:var(--copper); }
+  .pill{
+    font-size:10px; padding:3px 8px; border-radius:20px; font-family:'JetBrains Mono',monospace; text-transform:uppercase;
+  }
+  .pill-ok{ background:#1f2c1c; color:var(--sage); }
+  .pill-warn{ background:#3a2418; color:var(--ember); }
+
+  .btn{
+    padding:9px 15px; font-size:12.5px; font-family:'Oswald',sans-serif; letter-spacing:0.03em;
+    text-transform:uppercase; border-radius:4px;
+  }
+  .btn-primary{ background:var(--copper); color:#1a1408; font-weight:600; }
+  .btn-primary:hover{ background:var(--copper-bright); }
+  .btn-ghost{ background:transparent; border:1px solid var(--line); color:var(--plate); }
+  .btn-ghost:hover{ border-color:var(--copper); }
+  .btn-sm{ padding:6px 10px; font-size:11px; }
+  .btn:disabled{ opacity:0.35; cursor:not-allowed; }
+
+  .form-row{ display:flex; gap:10px; }
+  .form-row > *{ flex:1; }
+
+  .empty-note{ color:var(--plate-dim); font-size:12.5px; font-family:'JetBrains Mono',monospace; padding:10px 0;}
+
+  .locked-note{
+    display:flex; gap:10px; align-items:flex-start; background:#241d13; border:1px dashed #5c4322;
+    color:var(--copper-bright); padding:12px 14px; border-radius:6px; font-size:12px; margin-top:10px;
+  }
+
+  /* receipt / ticket styling (signature element) */
+  .receipt{
+    background:var(--plate); color:#242017; font-family:'JetBrains Mono', monospace; font-size:12px;
+    padding:20px 20px 26px; border-radius:2px; position:relative; line-height:1.65;
+    clip-path: polygon(
+      0% 2%, 3% 0%, 6% 2%, 9% 0%, 12% 2%, 15% 0%, 18% 2%, 21% 0%, 24% 2%, 27% 0%, 30% 2%, 33% 0%,
+      36% 2%, 39% 0%, 42% 2%, 45% 0%, 48% 2%, 51% 0%, 54% 2%, 57% 0%, 60% 2%, 63% 0%, 66% 2%, 69% 0%,
+      72% 2%, 75% 0%, 78% 2%, 81% 0%, 84% 2%, 87% 0%, 90% 2%, 93% 0%, 96% 2%, 100% 0%,
+      100% 100%, 0% 100%
+    );
+    box-shadow:0 10px 30px rgba(0,0,0,0.35);
+  }
+  .receipt h3{ font-family:'JetBrains Mono',monospace; font-size:14px; text-align:center; letter-spacing:0.08em; margin-bottom:2px;}
+  .receipt .r-sub{ text-align:center; font-size:10.5px; color:#5c5644; margin-bottom:14px; }
+  .receipt .r-line{ border-top:1px dashed #8a8267; margin:10px 0; }
+  .receipt .r-row{ display:flex; justify-content:space-between; }
+  .receipt .r-total{ font-weight:700; font-size:13.5px; margin-top:8px; }
+
+  .toast-wrap{ position:fixed; bottom:20px; right:20px; display:flex; flex-direction:column; gap:8px; z-index:999; }
+  .toast{
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; padding:12px 16px; border-radius:5px;
+    min-width:260px; max-width:340px; box-shadow:0 8px 24px rgba(0,0,0,0.4);
+    border-left:4px solid; animation:slideIn .2s ease;
+  }
+  @keyframes slideIn{ from{ transform:translateX(30px); opacity:0;} to{transform:translateX(0); opacity:1;} }
+  .toast-error{ background:#2c1815; border-color:var(--ember); color:#f3d3ce; }
+  .toast-success{ background:#16241a; border-color:var(--sage); color:#d4e6cb; }
+  .toast-info{ background:#241d13; border-color:var(--copper); color:#f0decb; }
+  .toast small{ display:block; opacity:0.65; margin-top:3px; }
+
+  ul.otoritas-list{ list-style:none; }
+  ul.otoritas-list li{
+    padding:9px 0; border-bottom:1px solid var(--line); font-size:13px; display:flex; gap:10px; align-items:flex-start;
+  }
+  ul.otoritas-list li:last-child{ border-bottom:none; }
+  ul.otoritas-list li::before{ content:"→"; color:var(--copper); }
+
+  code.tag{
+    font-family:'JetBrains Mono',monospace; background:var(--ink); border:1px solid var(--line);
+    padding:1px 6px; border-radius:3px; font-size:11px; color:var(--copper-bright);
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN SCREEN ================= -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="brand-eyebrow">// dapursys v1</div>
+    <div class="brand-title">Sistem Administrasi Dapur</div>
+    <div class="brand-sub">Masuk sesuai peran Anda. Setiap peran mewarisi kelas <span class="mono">Pengguna</span> namun memiliki otoritas yang berbeda (polymorphism).</div>
+
+    <div class="role-toggle">
+      <button class="role-btn active" data-role="admin" onclick="pilihPeran('admin')">
+        <span class="rt-name">Admin Dapur</span>
+        <span class="rt-desc">Kelola anggaran, supplier &amp; bahan baku</span>
+      </button>
+      <button class="role-btn" data-role="koki" onclick="pilihPeran('koki')">
+        <span class="rt-name">Koki</span>
+        <span class="rt-desc">Susun menu &amp; catat pemakaian bahan</span>
+      </button>
+    </div>
+
+    <div class="field">
+      <label for="login-nama">Nama Pengguna</label>
+      <input id="login-nama" type="text" placeholder="mis. Budi Santoso" class="mono">
+    </div>
+
+    <div id="field-admin" class="field">
+      <label for="login-anggaran">Anggaran Bulanan Awal (Rp)</label>
+      <input id="login-anggaran" type="number" placeholder="5000000" class="mono">
+    </div>
+
+    <div id="field-koki" class="field hidden">
+      <label for="login-spesialisasi">Spesialisasi Masakan</label>
+      <input id="login-spesialisasi" type="text" placeholder="mis. Masakan Nusantara" class="mono">
+    </div>
+
+    <button class="login-submit" onclick="prosesLogin()">Masuk ke Sistem →</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ================= APP SHELL ================= -->
+<div id="app-screen">
+  <header>
+    <div class="app-logo">
+      <div class="mark">D</div>
+      <div class="name display">Dapursys</div>
+    </div>
+    <div class="user-chip">
+      <div class="user-info">
+        <div class="u-name" id="hdr-nama"></div>
+        <div class="u-role"><span class="badge" id="hdr-badge"></span></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Keluar</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="otoritas" onclick="pindahTab('otoritas')">Otoritas Saya</button>
+    <button class="tab-btn" data-tab="bahan" onclick="pindahTab('bahan')">Bahan Baku</button>
+    <button class="tab-btn" data-tab="menu" onclick="pindahTab('menu')">Menu Makanan</button>
+    <button class="tab-btn" data-tab="transaksi" onclick="pindahTab('transaksi')">Transaksi Logistik</button>
+    <button class="tab-btn" data-tab="laporan" onclick="pindahTab('laporan')">Laporan</button>
+  </nav>
+
+  <main>
+
+    <!-- ---------- TAB: OTORITAS ---------- -->
+    <section class="panel-view active" id="view-otoritas">
+      <div class="view-head">
+        <div>
+          <div class="view-title">Otoritas Saya</div>
+          <div class="view-desc">Dipanggil dari <span class="mono">pengguna.tampilkanOtoritas()</span> — hasil berbeda tergantung kelas objek yang login (polymorphism).</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">⚙ Daftar Otoritas</div>
+          <ul class="otoritas-list" id="otoritas-list"></ul>
+        </div>
+        <div class="card">
+          <div class="card-title">🪪 Riwayat Login</div>
+          <div id="login-log" class="mono" style="font-size:12px; color:var(--plate-dim); line-height:1.8;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- TAB: BAHAN BAKU ---------- -->
+    <section class="panel-view" id="view-bahan">
+      <div class="view-head">
+        <div>
+          <div class="view-title">Bahan Baku</div>
+          <div class="view-desc">Kelas <span class="mono">BahanBaku</span> — Admin Dapur <em>mengelola</em> stok, Koki <em>mencatat</em> pemakaian.</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">📦 Daftar Bahan Baku</div>
+          <div id="bahan-list"></div>
+        </div>
+        <div>
+          <div class="card" id="card-tambah-bahan">
+            <div class="card-title">+ Tambah Bahan Baku Baru</div>
+            <div class="field"><label>Nama Bahan</label><input id="bb-nama" placeholder="Bawang Merah"></div>
+            <div class="form-row">
+              <div class="field"><label>Jumlah Stok</label><input id="bb-stok" type="number" placeholder="10"></div>
+              <div class="field"><label>Satuan</label><input id="bb-satuan" placeholder="kg"></div>
+            </div>
+            <div class="field"><label>Tanggal Kedaluwarsa</label><input id="bb-tgl" type="date"></div>
+            <button class="btn btn-primary" style="width:100%" onclick="tambahBahanBaku()">Tambahkan</button>
+          </div>
+          <div class="card" id="card-pakai-bahan">
+            <div class="card-title">✂ Catat Pemakaian (Koki)</div>
+            <div class="field"><label>Pilih Bahan</label><select id="pk-bahan"></select></div>
+            <div class="field"><label>Jumlah Dipakai</label><input id="pk-jumlah" type="number" placeholder="2"></div>
+            <button class="btn btn-primary" style="width:100%" onclick="catatPemakaian()">Kurangi Stok</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- TAB: MENU MAKANAN ---------- -->
+    <section class="panel-view" id="view-menu">
+      <div class="view-head">
+        <div>
+          <div class="view-title">Menu Makanan</div>
+          <div class="view-desc">Kelas <span class="mono">MenuMakanan</span> — dibuat oleh Koki melalui <span class="mono">buatRencanaMenu()</span>.</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🍽 Daftar Menu</div>
+          <div id="menu-list"></div>
+        </div>
+        <div class="card" id="card-buat-menu">
+          <div class="card-title">+ Susun Menu Baru</div>
+          <div class="field"><label>Nama Menu</label><input id="mn-nama" placeholder="Soto Ayam"></div>
+          <div class="field"><label>Resep Bahan (format: nama:jumlah:satuan, pisahkan koma)</label>
+            <textarea id="mn-resep" rows="3" placeholder="Ayam:1:ekor, Bawang Merah:0.2:kg, Kunyit:0.05:kg"></textarea>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="buatMenu()">Simpan Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- TAB: TRANSAKSI LOGISTIK ---------- -->
+    <section class="panel-view" id="view-transaksi">
+      <div class="view-head">
+        <div>
+          <div class="view-title">Transaksi Logistik</div>
+          <div class="view-desc">Kelas <span class="mono">TransaksiLogistik</span> — pengadaan &amp; pembelanjaan dicatat Admin Dapur.</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🧾 Riwayat Transaksi</div>
+          <div id="transaksi-list"></div>
+        </div>
+        <div class="card" id="card-catat-transaksi">
+          <div class="card-title">+ Catat Transaksi</div>
+          <div class="field"><label>Deskripsi</label><input id="tr-desk" placeholder="Belanja sayur mingguan"></div>
+          <div class="field"><label>Biaya (Rp)</label><input id="tr-biaya" type="number" placeholder="250000"></div>
+          <button class="btn btn-primary" style="width:100%" onclick="catatTransaksi()">Catat Transaksi</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- TAB: LAPORAN ---------- -->
+    <section class="panel-view" id="view-laporan">
+      <div class="view-head">
+        <div>
+          <div class="view-title">Laporan</div>
+          <div class="view-desc">Hasil <span class="mono">cetakLaporan()</span> — ringkasan dapur hari ini.</div>
+        </div>
+        <button class="btn btn-ghost" onclick="renderLaporan()">↻ Perbarui</button>
+      </div>
+      <div id="laporan-wrap" style="max-width:420px;"></div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+/* ============================================================
+   CUSTOM EXCEPTIONS
+============================================================ */
+class DapurError extends Error {
+  constructor(pesan){ super(pesan); this.name = "DapurError"; }
+}
+class StokTidakCukupError extends DapurError {
+  constructor(nama, diminta, tersedia){
+    super(`Stok "${nama}" tidak cukup. Diminta ${diminta}, tersedia ${tersedia}.`);
+    this.name = "StokTidakCukupError";
+  }
+}
+class InputTidakValidError extends DapurError {
+  constructor(pesan = "Input tidak valid."){ super(pesan); this.name = "InputTidakValidError"; }
+}
+class OtoritasError extends DapurError {
+  constructor(aksi){ super(`Peran Anda tidak memiliki otoritas untuk: ${aksi}`); this.name = "OtoritasError"; }
+}
+
+/* ============================================================
+   PARENT CLASS: Pengguna   (Inheritance root + Encapsulation)
+============================================================ */
+class Pengguna {
+  #idPengguna; #nama; #peranan; #riwayatLogin = [];
+
+  constructor(idPengguna, nama, peranan){
+    if(!nama || !nama.trim()) throw new InputTidakValidError("Nama pengguna wajib diisi.");
+    this.#idPengguna = idPengguna;
+    this.#nama = nama.trim();
+    this.#peranan = peranan;
+  }
+
+  get idPengguna(){ return this.#idPengguna; }
+  get nama(){ return this.#nama; }
+  get peranan(){ return this.#peranan; }
+  get riwayatLogin(){ return [...this.#riwayatLogin]; }
+
+  // instance method
+  login(){
+    const cap = new Date().toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' });
+    this.#riwayatLogin.push(cap);
+    return `${this.#nama} (${this.#peranan}) berhasil login pada ${cap}`;
+  }
+
+  // Method ini di-override anak kelas -> POLYMORPHISM
+  tampilkanOtoritas(){
+    return ["Login ke sistem", "Melihat data dapur (baca saja)"];
+  }
+
+  // magic-method setara __str__ di JS
+  toString(){
+    return `[${this.#idPengguna}] ${this.#nama} — ${this.#peranan}`;
+  }
+
+  // static method
+  static buatId(prefix, n){
+    return `${prefix}-${String(n).padStart(3, "0")}`;
+  }
+}
+
+/* ============================================================
+   CHILD CLASS: AdminDapur extends Pengguna
+============================================================ */
+class AdminDapur extends Pengguna {
+  #anggaranBulanan; #supplierList = [];
+
+  constructor(idPengguna, nama, anggaranBulanan){
+    super(idPengguna, nama, "Admin Dapur");
+    if(anggaranBulanan < 0) throw new InputTidakValidError("Anggaran tidak boleh negatif.");
+    this.#anggaranBulanan = Number(anggaranBulanan) || 0;
+  }
+
+  get anggaranBulanan(){ return this.#anggaranBulanan; }
+  get supplierList(){ return [...this.#supplierList]; }
+
+  kelolaAnggaran(perubahan){
+    if(typeof perubahan !== "number" || Number.isNaN(perubahan)){
+      throw new InputTidakValidError("Perubahan anggaran harus berupa angka.");
+    }
+    if(this.#anggaranBulanan + perubahan < 0){
+      throw new InputTidakValidError("Anggaran tidak boleh menjadi negatif.");
+    }
+    this.#anggaranBulanan += perubahan;
+    return this.#anggaranBulanan;
+  }
+
+  tambahSupplier(namaSupplier){
+    if(!namaSupplier || !namaSupplier.trim()) throw new InputTidakValidError("Nama supplier kosong.");
+    this.#supplierList.push(namaSupplier.trim());
+    return this.#supplierList;
+  }
+
+  // POLYMORPHISM: override otoritas milik AdminDapur
+  tampilkanOtoritas(){
+    return [
+      "Mengelola anggaran bulanan dapur",
+      "Menambah &amp; menghapus data supplier",
+      "Menambah bahan baku baru ke inventaris",
+      "Mencatat transaksi logistik / pengadaan",
+      "Melihat seluruh laporan dapur",
+    ];
+  }
+}
+
+/* ============================================================
+   CHILD CLASS: Koki extends Pengguna
+============================================================ */
+class Koki extends Pengguna {
+  #spesialisasi; #menuDibuat = [];
+
+  constructor(idPengguna, nama, spesialisasi){
+    super(idPengguna, nama, "Koki");
+    this.#spesialisasi = spesialisasi && spesialisasi.trim() ? spesialisasi.trim() : "Umum";
+  }
+
+  get spesialisasi(){ return this.#spesialisasi; }
+
+  buatRencanaMenu(menuMakanan){
+    this.#menuDibuat.push(menuMakanan.idMenu);
+    return menuMakanan;
+  }
+
+  // Koki "mencatat" pemakaian -> mengurangi stok BahanBaku
+  updatePenggunaanStok(bahanBaku, jumlah){
+    bahanBaku.kurangiStok(jumlah); // bisa melempar StokTidakCukupError
+    return bahanBaku;
+  }
+
+  // POLYMORPHISM: override otoritas milik Koki (berbeda dari AdminDapur)
+  tampilkanOtoritas(){
+    return [
+      `Menyusun rencana menu (spesialisasi: ${this.#spesialisasi})`,
+      "Menghitung kebutuhan bahan untuk suatu menu",
+      "Mencatat pemakaian / pengurangan stok bahan baku",
+      "Melihat status kedaluwarsa bahan baku",
+    ];
+  }
+}
+
+/* ============================================================
+   CLASS: BahanBaku
+============================================================ */
+class BahanBaku {
+  #idBahan; #namaBahan; #jumlahStok; #tglKedaluwarsa; #satuan;
+
+  constructor(idBahan, namaBahan, jumlahStok, satuan, tglKedaluwarsa){
+    if(jumlahStok < 0) throw new InputTidakValidError("Jumlah stok tidak boleh negatif.");
+    this.#idBahan = idBahan;
+    this.#namaBahan = namaBahan;
+    this.#jumlahStok = Number(jumlahStok);
+    this.#satuan = satuan || "pcs";
+    this.#tglKedaluwarsa = tglKedaluwarsa; // objek Date
+  }
+
+  get idBahan(){ return this.#idBahan; }
+  get namaBahan(){ return this.#namaBahan; }
+  get jumlahStok(){ return this.#jumlahStok; }
+  get satuan(){ return this.#satuan; }
+  get tglKedaluwarsa(){ return this.#tglKedaluwarsa; }
+
+  tambahStok(jumlah){
+    if(jumlah <= 0) throw new InputTidakValidError("Jumlah tambah stok harus lebih dari 0.");
+    this.#jumlahStok += jumlah;
+    return this.#jumlahStok;
+  }
+
+  kurangiStok(jumlah){
+    if(jumlah <= 0) throw new InputTidakValidError("Jumlah pemakaian harus lebih dari 0.");
+    if(jumlah > this.#jumlahStok) throw new StokTidakCukupError(this.#namaBahan, jumlah, this.#jumlahStok);
+    this.#jumlahStok -= jumlah;
+    return this.#jumlahStok;
+  }
+
+  cekStatusKedaluwarsa(){
+    if(!this.#tglKedaluwarsa) return "Tidak diketahui";
+    return new Date() > this.#tglKedaluwarsa ? "Kedaluwarsa" : "Layak Pakai";
+  }
+
+  toString(){
+    return `[${this.#idBahan}] ${this.#namaBahan} — ${this.#jumlahStok} ${this.#satuan}`;
+  }
+
+  static buatId(n){ return `BB-${String(n).padStart(3, "0")}`; }
+}
+
+/* ============================================================
+   CLASS: MenuMakanan
+============================================================ */
+class MenuMakanan {
+  #idMenu; #namaMenu; #resepBahan; // array of {nama, jumlah, satuan}
+
+  constructor(idMenu, namaMenu, resepBahan){
+    if(!namaMenu || !namaMenu.trim()) throw new InputTidakValidError("Nama menu wajib diisi.");
+    if(!Array.isArray(resepBahan) || resepBahan.length === 0){
+      throw new InputTidakValidError("Resep bahan tidak boleh kosong.");
+    }
+    this.#idMenu = idMenu;
+    this.#namaMenu = namaMenu.trim();
+    this.#resepBahan = resepBahan;
+  }
+
+  get idMenu(){ return this.#idMenu; }
+  get namaMenu(){ return this.#namaMenu; }
+  get resepBahan(){ return [...this.#resepBahan]; }
+
+  hitungKebutuhanBahan(porsi = 1){
+    if(porsi <= 0) throw new InputTidakValidError("Jumlah porsi harus lebih dari 0.");
+    return this.#resepBahan.map(r => `${r.nama}: ${(r.jumlah * porsi).toFixed(2)} ${r.satuan}`);
+  }
+
+  tampilDetailMenu(){
+    return `${this.#namaMenu} (${this.#resepBahan.length} bahan) — ${this.#resepBahan.map(r => r.nama).join(", ")}`;
+  }
+
+  static buatId(n){ return `MN-${String(n).padStart(3, "0")}`; }
+}
+
+/* ============================================================
+   CLASS: TransaksiLogistik
+============================================================ */
+class TransaksiLogistik {
+  #idTransaksi; #tglTransaksi; #deskripsi; #totalBiaya;
+
+  constructor(idTransaksi, deskripsi, totalBiaya){
+    if(totalBiaya <= 0) throw new InputTidakValidError("Biaya transaksi harus lebih dari 0.");
+    this.#idTransaksi = idTransaksi;
+    this.#deskripsi = deskripsi;
+    this.#totalBiaya = Number(totalBiaya);
+    this.#tglTransaksi = new Date();
+  }
+
+  get idTransaksi(){ return this.#idTransaksi; }
+  get deskripsi(){ return this.#deskripsi; }
+  get totalBiaya(){ return this.#totalBiaya; }
+  get tglTransaksi(){ return this.#tglTransaksi; }
+
+  catatTransaksi(){
+    return `Transaksi ${this.#idTransaksi} tercatat: ${this.#deskripsi} — Rp${this.#totalBiaya.toLocaleString('id-ID')}`;
+  }
+
+  static cetakLaporan(daftarTransaksi){
+    const total = daftarTransaksi.reduce((a, t) => a + t.totalBiaya, 0);
+    return { jumlahTransaksi: daftarTransaksi.length, totalBiaya: total };
+  }
+
+  toString(){
+    return `[${this.#idTransaksi}] ${this.#deskripsi} — Rp${this.#totalBiaya.toLocaleString('id-ID')}`;
+  }
+}
+
+/* ============================================================
+   STATE APLIKASI (dalam memori sesi)
+============================================================ */
+let currentUser = null;
+const state = {
+  bahanBaku: [],
+  menuMakanan: [],
+  transaksi: [],
+  counter: { bb: 0, mn: 0, tr: 0, pengguna: 0 },
+};
+
+/* ---------- seed data contoh supaya UI tidak kosong ---------- */
+function seedData(){
+  const tglAman = new Date(); tglAman.setDate(tglAman.getDate() + 20);
+  const tglLewat = new Date(); tglLewat.setDate(tglLewat.getDate() - 3);
+
+  state.counter.bb++;
+  state.bahanBaku.push(new BahanBaku(BahanBaku.buatId(state.counter.bb), "Beras", 25, "kg", tglAman));
+  state.counter.bb++;
+  state.bahanBaku.push(new BahanBaku(BahanBaku.buatId(state.counter.bb), "Ayam Fillet", 8, "kg", tglLewat));
+  state.counter.bb++;
+  state.bahanBaku.push(new BahanBaku(BahanBaku.buatId(state.counter.bb), "Bawang Merah", 4, "kg", tglAman));
+
+  state.counter.mn++;
+  state.menuMakanan.push(new MenuMakanan(MenuMakanan.buatId(state.counter.mn), "Nasi Ayam Bawang", [
+    { nama: "Beras", jumlah: 0.2, satuan: "kg" },
+    { nama: "Ayam Fillet", jumlah: 0.15, satuan: "kg" },
+    { nama: "Bawang Merah", jumlah: 0.05, satuan: "kg" },
+  ]));
+
+  state.counter.tr++;
+  state.transaksi.push(new TransaksiLogistik(TransaksiLogistik.name ? `TR-00${state.counter.tr}` : "", "Belanja awal minggu", 480000));
+}
+seedData();
+
+/* ============================================================
+   TOAST NOTIFICATION
+============================================================ */
+function toast(pesan, tipe = "info", sub = ""){
+  const wrap = document.getElementById("toast-wrap");
+  const el = document.createElement("div");
+  el.className = `toast toast-${tipe}`;
+  el.innerHTML = `${pesan}${sub ? `<small>${sub}</small>` : ""}`;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; el.style.transition = ".3s"; setTimeout(()=>el.remove(), 300); }, 3400);
+}
+
+/* ============================================================
+   LOGIN FLOW
+============================================================ */
+function pilihPeran(role){
+  document.querySelectorAll(".role-btn").forEach(b => b.classList.toggle("active", b.dataset.role === role));
+  document.getElementById("field-admin").classList.toggle("hidden", role !== "admin");
+  document.getElementById("field-koki").classList.toggle("hidden", role !== "koki");
+}
+
+function prosesLogin(){
+  const role = document.querySelector(".role-btn.active").dataset.role;
+  const nama = document.getElementById("login-nama").value;
+  const errEl = document.getElementById("login-error");
+  errEl.style.display = "none";
+
+  try{
+    state.counter.pengguna++;
+    if(role === "admin"){
+      const anggaran = Number(document.getElementById("login-anggaran").value || 0);
+      currentUser = new AdminDapur(Pengguna.buatId("USR", state.counter.pengguna), nama, anggaran);
+    } else {
+      const spesialisasi = document.getElementById("login-spesialisasi").value;
+      currentUser = new Koki(Pengguna.buatId("USR", state.counter.pengguna), nama, spesialisasi);
+    }
+    const pesanLogin = currentUser.login(); // instance method dari Pengguna
+    maskukkanAplikasi(pesanLogin);
+  } catch(e){
+    if(e instanceof DapurError){
+      errEl.textContent = e.message;
+    } else {
+      errEl.textContent = "Terjadi kesalahan tak terduga saat login.";
+    }
+    errEl.style.display = "block";
+  }
+}
+
+function maskukkanAplikasi(pesanLogin){
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app-screen").style.display = "flex";
+
+  document.getElementById("hdr-nama").textContent = currentUser.nama;
+  const badge = document.getElementById("hdr-badge");
+  badge.textContent = currentUser.peranan;
+  badge.className = "badge " + (currentUser instanceof AdminDapur ? "badge-admin" : "badge-koki");
+
+  // Tampilkan/sembunyikan panel sesuai otoritas (mencerminkan class masing-masing)
+  const isAdmin = currentUser instanceof AdminDapur;
+  document.getElementById("card-tambah-bahan").classList.toggle("hidden", !isAdmin);
+  document.getElementById("card-catat-transaksi").classList.toggle("hidden", !isAdmin);
+  document.getElementById("card-pakai-bahan").classList.toggle("hidden", isAdmin);
+  document.getElementById("card-buat-menu").classList.toggle("hidden", isAdmin);
+
+  toast("Login berhasil", "success", pesanLogin);
+  renderSemua();
+}
+
+function logout(){
+  currentUser = null;
+  document.getElementById("app-screen").style.display = "none";
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("login-error").style.display = "none";
+  pindahTab("otoritas", true);
+}
+
+/* ============================================================
+   NAVIGASI TAB
+============================================================ */
+function pindahTab(tab, silent){
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  document.querySelectorAll(".panel-view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-" + tab).classList.add("active");
+  if(!silent) renderSemua();
+}
+
+/* ============================================================
+   RENDER: OTORITAS
+============================================================ */
+function renderOtoritas(){
+  const list = document.getElementById("otoritas-list");
+  // POLYMORPHISM: pemanggilan sama, hasil beda tergantung objek currentUser
+  const daftar = currentUser.tampilkanOtoritas();
+  list.innerHTML = daftar.map(o => `<li>${o}</li>`).join("");
+
+  const log = document.getElementById("login-log");
+  log.innerHTML = currentUser.riwayatLogin.map(r => `• ${r}`).join("<br>") || "Belum ada riwayat.";
+}
+
+/* ============================================================
+   RENDER + AKSI: BAHAN BAKU
+============================================================ */
+function renderBahanBaku(){
+  const wrap = document.getElementById("bahan-list");
+  if(state.bahanBaku.length === 0){
+    wrap.innerHTML = `<div class="empty-note">// belum ada bahan baku tercatat</div>`;
+  } else {
+    wrap.innerHTML = state.bahanBaku.map(b => {
+      const status = b.cekStatusKedaluwarsa();
+      const pillClass = status === "Kedaluwarsa" ? "pill-warn" : "pill-ok";
+      return `
+        <div class="item-row">
+          <div class="item-main">
+            <div class="i-name">${b.namaBahan} <span class="pill ${pillClass}">${status}</span></div>
+            <div class="i-meta">${b.idBahan} · ${b.jumlahStok} ${b.satuan} · exp ${b.tglKedaluwarsa ? b.tglKedaluwarsa.toLocaleDateString('id-ID') : '-'}</div>
+          </div>
+          <div class="item-actions">
+            <button class="qty-btn" onclick="ubahStok('${b.idBahan}', -1)">−</button>
+            <button class="qty-btn" onclick="ubahStok('${b.idBahan}', 1)">+</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  const select = document.getElementById("pk-bahan");
+  select.innerHTML = state.bahanBaku.map(b => `<option value="${b.idBahan}">${b.namaBahan} (${b.jumlahStok} ${b.satuan})</option>`).join("");
+}
+
+function ubahStok(id, delta){
+  try{
+    const bahan = state.bahanBaku.find(b => b.idBahan === id);
+    if(delta > 0) bahan.tambahStok(1); else bahan.kurangiStok(1);
+    toast(`Stok "${bahan.namaBahan}" diperbarui`, "success", `Sekarang: ${bahan.jumlahStok} ${bahan.satuan}`);
+  } catch(e){
+    tanganiError(e);
+  }
+  renderSemua();
+}
+
+function tambahBahanBaku(){
+  if(!(currentUser instanceof AdminDapur)){
+    tanganiError(new OtoritasError("menambah bahan baku baru"));
+    return;
+  }
+  try{
+    const nama = document.getElementById("bb-nama").value;
+    const stok = Number(document.getElementById("bb-stok").value);
+    const satuan = document.getElementById("bb-satuan").value || "pcs";
+    const tglRaw = document.getElementById("bb-tgl").value;
+    if(!nama.trim()) throw new InputTidakValidError("Nama bahan wajib diisi.");
+    if(!tglRaw) throw new InputTidakValidError("Tanggal kedaluwarsa wajib diisi.");
+
+    state.counter.bb++;
+    const bahan = new BahanBaku(BahanBaku.buatId(state.counter.bb), nama, stok, satuan, new Date(tglRaw));
+    state.bahanBaku.push(bahan);
+    // AdminDapur "mengelola" bahan baku
+    currentUser.tambahSupplier ? null : null;
+
+    toast("Bahan baku ditambahkan", "success", bahan.toString());
+    document.getElementById("bb-nama").value = "";
+    document.getElementById("bb-stok").value = "";
+    document.getElementById("bb-satuan").value = "";
+    document.getElementById("bb-tgl").value = "";
+  } catch(e){
+    tanganiError(e);
+  }
+  renderSemua();
+}
+
+function catatPemakaian(){
+  if(!(currentUser instanceof Koki)){
+    tanganiError(new OtoritasError("mencatat pemakaian bahan baku"));
+    return;
+  }
+  try{
+    const id = document.getElementById("pk-bahan").value;
+    const jumlah = Number(document.getElementById("pk-jumlah").value);
+    const bahan = state.bahanBaku.find(b => b.idBahan === id);
+    if(!bahan) throw new InputTidakValidError("Pilih bahan terlebih dahulu.");
+
+    currentUser.updatePenggunaanStok(bahan, jumlah); // Koki mencatat -> kurangiStok()
+    toast("Pemakaian dicatat", "success", `${bahan.namaBahan} tersisa ${bahan.jumlahStok} ${bahan.satuan}`);
+    document.getElementById("pk-jumlah").value = "";
+  } catch(e){
+    tanganiError(e);
+  }
+  renderSemua();
+}
+
+/* ============================================================
+   RENDER + AKSI: MENU MAKANAN
+============================================================ */
+function renderMenu(){
+  const wrap = document.getElementById("menu-list");
+  if(state.menuMakanan.length === 0){
+    wrap.innerHTML = `<div class="empty-note">// belum ada menu tersusun</div>`;
+    return;
+  }
+  wrap.innerHTML = state.menuMakanan.map(m => `
+    <div class="item-row" style="flex-direction:column; align-items:flex-start; gap:8px;">
+      <div class="item-main" style="width:100%;">
+        <div class="i-name">${m.namaMenu}</div>
+        <div class="i-meta">${m.idMenu} · ${m.resepBahan.length} bahan</div>
+      </div>
+      <div class="i-meta" style="line-height:1.7;">${m.hitungKebutuhanBahan(1).join(" · ")}</div>
+    </div>
+  `).join("");
+}
+
+function buatMenu(){
+  if(!(currentUser instanceof Koki)){
+    tanganiError(new OtoritasError("menyusun menu baru"));
+    return;
+  }
+  try{
+    const nama = document.getElementById("mn-nama").value;
+    const resepRaw = document.getElementById("mn-resep").value;
+    if(!resepRaw.trim()) throw new InputTidakValidError("Resep bahan wajib diisi.");
+
+    const resep = resepRaw.split(",").map(s => {
+      const parts = s.trim().split(":");
+      if(parts.length < 3) throw new InputTidakValidError(`Format resep salah pada: "${s.trim()}". Gunakan nama:jumlah:satuan`);
+      const [rNama, rJumlah, rSatuan] = parts;
+      const jumlahNum = Number(rJumlah);
+      if(Number.isNaN(jumlahNum) || jumlahNum <= 0) throw new InputTidakValidError(`Jumlah pada resep "${rNama}" tidak valid.`);
+      return { nama: rNama.trim(), jumlah: jumlahNum, satuan: rSatuan.trim() };
+    });
+
+    state.counter.mn++;
+    const menu = new MenuMakanan(MenuMakanan.buatId(state.counter.mn), nama, resep);
+    currentUser.buatRencanaMenu(menu); // Koki membuat menu
+    state.menuMakanan.push(menu);
+
+    toast("Menu baru tersimpan", "success", menu.tampilDetailMenu());
+    document.getElementById("mn-nama").value = "";
+    document.getElementById("mn-resep").value = "";
+  } catch(e){
+    tanganiError(e);
+  }
+  renderSemua();
+}
+
+/* ============================================================
+   RENDER + AKSI: TRANSAKSI LOGISTIK
+============================================================ */
+function renderTransaksi(){
+  const wrap = document.getElementById("transaksi-list");
+  if(state.transaksi.length === 0){
+    wrap.innerHTML = `<div class="empty-note">// belum ada transaksi tercatat</div>`;
+    return;
+  }
+  wrap.innerHTML = [...state.transaksi].reverse().map(t => `
+    <div class="item-row">
+      <div class="item-main">
+        <div class="i-name">${t.deskripsi}</div>
+        <div class="i-meta">${t.idTransaksi} · ${t.tglTransaksi.toLocaleDateString('id-ID')}</div>
+      </div>
+      <div class="i-name mono">Rp${t.totalBiaya.toLocaleString('id-ID')}</div>
+    </div>
+  `).join("");
+}
+
+function catatTransaksi(){
+  if(!(currentUser instanceof AdminDapur)){
+    tanganiError(new OtoritasError("mencatat transaksi logistik"));
+    return;
+  }
+  try{
+    const desk = document.getElementById("tr-desk").value;
+    const biaya = Number(document.getElementById("tr-biaya").value);
+    if(!desk.trim()) throw new InputTidakValidError("Deskripsi transaksi wajib diisi.");
+
+    state.counter.tr++;
+    const trx = new TransaksiLogistik(`TR-${String(state.counter.tr).padStart(3,"0")}`, desk, biaya);
+    trx.catatTransaksi();
+    state.transaksi.push(trx);
+    currentUser.kelolaAnggaran(-biaya); // otomatis potong anggaran admin
+
+    toast("Transaksi dicatat", "success", trx.toString());
+    document.getElementById("tr-desk").value = "";
+    document.getElementById("tr-biaya").value = "";
+  } catch(e){
+    tanganiError(e);
+  }
+  renderSemua();
+}
+
+/* ============================================================
+   RENDER: LAPORAN (receipt style — signature element)
+============================================================ */
+function renderLaporan(){
+  const wrap = document.getElementById("laporan-wrap");
+  const ringkasanTrx = TransaksiLogistik.cetakLaporan(state.transaksi);
+  const totalStokItem = state.bahanBaku.length;
+  const kedaluwarsa = state.bahanBaku.filter(b => b.cekStatusKedaluwarsa() === "Kedaluwarsa").length;
+  const tgl = new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+  const jam = new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+
+  wrap.innerHTML = `
+    <div class="receipt">
+      <h3>*** LAPORAN DAPUR ***</h3>
+      <div class="r-sub">${tgl} — ${jam} WIB</div>
+      <div class="r-line"></div>
+      <div class="r-row"><span>Jenis bahan baku</span><span>${totalStokItem}</span></div>
+      <div class="r-row"><span>Bahan kedaluwarsa</span><span>${kedaluwarsa}</span></div>
+      <div class="r-row"><span>Menu tersusun</span><span>${state.menuMakanan.length}</span></div>
+      <div class="r-line"></div>
+      <div class="r-row"><span>Jumlah transaksi</span><span>${ringkasanTrx.jumlahTransaksi}</span></div>
+      <div class="r-row"><span>Total pengeluaran</span><span>Rp${ringkasanTrx.totalBiaya.toLocaleString('id-ID')}</span></div>
+      ${currentUser instanceof AdminDapur ? `<div class="r-row"><span>Sisa anggaran</span><span>Rp${currentUser.anggaranBulanan.toLocaleString('id-ID')}</span></div>` : ""}
+      <div class="r-line"></div>
+      <div class="r-row r-total"><span>Dicetak oleh</span><span>${currentUser.nama}</span></div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   ERROR HANDLING TERPUSAT
+============================================================ */
+function tanganiError(e){
+  if(e instanceof StokTidakCukupError) return toast("Stok tidak cukup", "error", e.message);
+  if(e instanceof OtoritasError) return toast("Otoritas ditolak", "error", e.message);
+  if(e instanceof InputTidakValidError) return toast("Input tidak valid", "error", e.message);
+  if(e instanceof DapurError) return toast("Kesalahan sistem dapur", "error", e.message);
+  console.error(e);
+  toast("Terjadi kesalahan tak terduga", "error", e.message || String(e));
+}
+
+/* ============================================================
+   RENDER SEMUA (dipanggil setiap ada perubahan state)
+============================================================ */
+function renderSemua(){
+  if(!currentUser) return;
+  renderOtoritas();
+  renderBahanBaku();
+  renderMenu();
+  renderTransaksi();
+  renderLaporan();
+}
+</script>
+</body>
+</html>
